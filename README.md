@@ -9,7 +9,7 @@ PDF 파일에서 간단한 문제를 만들어내는 프로그램
 ```
 git clone https://github.com/Youngho-kr/make_exam_from_pdf.git
 python -m venv venv
-souce venv/bin/activate
+source venv/bin/activate
 pip install -r requirements.txt
 python main.py [QUESTIONS_FOR_PAGE] [FILE_NAME]
 ```
