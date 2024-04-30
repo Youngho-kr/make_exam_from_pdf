@@ -4,6 +4,7 @@ from collections import Counter
 import random
 import re
 import unicodedata
+import sys
 
 def split_tokens(tokens):
     pattern = re.compile(r"(\W|\d+)")
@@ -25,7 +26,7 @@ def remove_suffix(word):
             return word[:-len(suffix)]
     return word
 
-def generate_questions_korean_soynlp(text, num_questions=3, context_words=100):
+def generate_questions_korean_soynlp(text, num_questions=1, context_words=100):
     # soynlp 토크나이저 생성
     tokenizer = LTokenizer()
     
@@ -35,7 +36,7 @@ def generate_questions_korean_soynlp(text, num_questions=3, context_words=100):
     # 토큰 추가 분리
     tokens = split_tokens(tokens)
 
-    # 한국어 불용어 리스트 (예시, 필요에 따라 수정 가능)
+    # 불용어
     stop_words = [
         '은', '는', '이', '가', '을', '를', '에', '에게', '에서', '와', '과', '도', '만', '처럼', '같이', '로서', '로써', '로', '부터', '까지', '보다', '하고', '등', '등등',
         '그리고', '그러나', '그런데', '하지만', '따라서', '그래서',
@@ -88,17 +89,17 @@ def generate_questions_korean_soynlp(text, num_questions=3, context_words=100):
             filtered_tokens.append(word)
         
     
-    # 가장 빈번한 단어를 찾습니다.
+    # 최빈 단어
     word_freq = Counter(filtered_tokens)
     most_common_words = word_freq.most_common(num_questions)
     
     questions = []
     for word, _ in most_common_words:
-        # 해당 단어가 나타난 모든 위치를 찾습니다.
+        # 조사 등 제거
         processed_word = remove_suffix(word)
         word_positions = [i for i, w in enumerate(tokens) if remove_suffix(w) == processed_word]
 
-        # 주어진 위치들 중에서 랜덤하게 하나를 선택
+        # 랜덤으로 생성
         if word_positions:
             pos = random.choice(word_positions)
             start = max(0, pos - context_words)
@@ -110,7 +111,7 @@ def generate_questions_korean_soynlp(text, num_questions=3, context_words=100):
     return questions
 
 def extract_text_from_pdf(pdf_path):
-    # PDF 파일을 열고 내용을 읽습니다.
+    # 각 페이지 별로 저장
     pdf_pages=[]
     with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages:
@@ -121,12 +122,19 @@ def extract_text_from_pdf(pdf_path):
     return pdf_pages
 
 def main():
-    pages = extract_text_from_pdf("ch5.pdf")
+    if len(sys.argv) != 3:
+        print("Usage: python main.py [QUESTIONS FOR PAGE] [FILE_NAME]")
+        sys.exit(1)
+
+    num_questions = int(sys.argv[1])
+    file_path = sys.argv[2]
+
+    pages = extract_text_from_pdf(file_path)
 
     # 문제 생성
     questions = []
     for page in pages:
-        questions += generate_questions_korean_soynlp(page)
+        questions += generate_questions_korean_soynlp(page, num_questions=num_questions)
 
     # 문제 출력
     for i, (question, answer) in enumerate(questions, 1):
